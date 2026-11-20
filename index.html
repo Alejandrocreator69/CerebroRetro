@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="es" class="no-js">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>¿Quién eres? ¿Te conoces? · Un viaje retro dentro de tu cerebro</title>
+<meta name="description" content="Un videojuego retro para explorar tu cerebro en 3D: instinto, emoción y razón. Una invitación a conocerte." />
+<meta name="theme-color" content="#0b0221" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Mr+Dafoe&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=20261120" />
+<script>document.documentElement.className = "js";</script>
+</head>
+<body>
+
+<div class="crt" aria-hidden="true"></div>
+
+<!-- ============ ARRANQUE ============ -->
+<div id="boot" class="boot" data-splash aria-hidden="true">
+  <div class="boot-inner">
+    <p>NEURO-OS v1.985 · (C) 2026</p>
+    <p>MEMORIA: 1.400 G DE MATERIA GRIS ........ OK</p>
+    <p id="boot-neurons">CARGANDO NEURONAS: 0</p>
+    <p class="boot-bar"><i id="boot-bar"></i></p>
+    <p class="blink">ENSAMBLANDO CORTEZA_</p>
+  </div>
+</div>
+
+<main>
+<!-- ============ EL JUEGO ============ -->
+<section id="brain-app" class="game" aria-label="Juego: explora tu cerebro en 3D">
+  <div class="sky" aria-hidden="true">
+    <div class="stars"></div>
+    <div class="sun"></div>
+    <svg class="mountains" viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <polyline points="0,120 70,70 130,95 210,40 290,92 360,60 430,100 520,55 600,110 680,62 760,96 850,35 930,90 1000,64 1080,98 1150,58 1200,85 1200,120" />
+      <polyline class="m2" points="0,120 110,88 190,104 300,78 380,108 480,84 560,114 640,90 740,110 820,80 910,108 1010,86 1100,106 1200,92 1200,120" />
+    </svg>
+    <div class="floor"><div class="grid"></div></div>
+  </div>
+
+  <canvas id="scene" aria-label="Modelo 3D del cerebro. Arrastra para girar."></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+  <div id="labels"></div>
+
+  <header class="hud">
+    <div class="hud-l"><span class="blink-slow">1UP</span> <b id="score">000000</b></div>
+    <div class="hud-c">HI-SCORE <b id="hiscore">000000</b></div>
+    <div class="hud-r"><span id="hud-level">NIVEL --</span> <span id="hud-ach">★ 0/9</span></div>
+  </header>
+
+  <div class="tools" role="toolbar" aria-label="Opciones">
+    <button id="t-music" title="Música" aria-pressed="true">♪</button>
+    <button id="t-sfx" title="Efectos de sonido" aria-pressed="true">SFX</button>
+    <button id="t-mode" title="Cambiar a holograma / anatómico" aria-pressed="false">HOLO</button>
+    <button id="t-xray" title="Rayos X: ver el interior">RX</button>
+    <button id="t-zin" title="Acercar">+</button>
+    <button id="t-zout" title="Alejar">−</button>
+  </div>
+
+  <p class="hint" id="hint">ARRASTRA PARA GIRAR · PELLIZCA O CTRL+RUEDA PARA ZOOM · TOCA UNA ZONA</p>
+  <div id="tooltip"></div>
+  <div id="toasts" aria-live="polite"></div>
+
+  <aside id="panel" aria-live="polite">
+    <div class="panel-head">
+      <span class="panel-step" id="panel-step"></span>
+      <button class="icon-btn" id="panel-close" aria-label="Cerrar panel y explorar libremente">×</button>
+    </div>
+    <div id="panel-body"></div>
+    <div class="panel-nav">
+      <button class="icon-btn" id="prev" aria-label="Nivel anterior">◀</button>
+      <div class="dots" id="dots"></div>
+      <button class="btn" id="next">SIGUIENTE ▶</button>
+    </div>
+  </aside>
+
+  <nav class="dock" id="dock" aria-label="Niveles"></nav>
+  <a class="to-manual" href="#manual">▼ MANUAL</a>
+
+  <!-- Pantalla de título -->
+  <div id="intro">
+    <div class="vhs" aria-hidden="true"><span>▶ PLAY</span><span id="vhs-time">SP 0:00:00</span></div>
+    <div class="inner">
+      <p class="eyebrow">UN VIAJE DE 5 MINUTOS HACIA ADENTRO</p>
+      <h1 class="logo">
+        <span class="chrome">¿QUIÉN ERES?</span>
+        <span class="script">¿Te conoces?</span>
+      </h1>
+      <p class="lede">Dentro de tu cabeza hay 1,4 kg que deciden casi todo por ti… y que casi nunca miras. Entra, gíralo, tócalo. Descubre quién está al volante.</p>
+      <div class="intro-actions">
+        <button class="btn btn-start" id="start">▶ PRESIONA START</button>
+        <button class="btn ghost" id="free">EXPLORAR LIBRE</button>
+      </div>
+      <button class="sound-pick" id="intro-sound" aria-pressed="true">♪ MÚSICA: <b>SÍ</b></button>
+      <p class="insert blink-slow">INSERTA CONCIENCIA · 1 CRÉDITO</p>
+    </div>
+  </div>
+
+  <div id="fallback"><p>Tu navegador no pudo mostrar el modelo 3D (WebGL no disponible).<br>Prueba con una versión reciente de Chrome, Safari, Edge o Firefox. Más abajo tienes todo el contenido.</p></div>
+</section>
+
+<!-- ============ MANUAL DEL JUGADOR ============ -->
+<section id="manual" class="sec sec-story">
+  <div class="wrap">
+    <p class="kick" data-reveal>MANUAL DEL JUGADOR · PÁG. 01</p>
+    <h2 class="h-neon" data-reveal>La profundidad <em>del Ser</em></h2>
+    <div class="story-grid">
+      <div data-reveal>
+        <p class="big">Dentro de la búsqueda interminable hay una herramienta escondida ante tus propios ojos: <b>el autoconocimiento</b>.</p>
+        <p>Conocerte a fondo empieza a cerrar las brechas que alguna vez se abrieron. Es el camino para integrar tus sombras y culminar lo que Jung llamó el proceso de <b>individuación</b>.</p>
+        <p>Biológicamente, el cerebro es una herramienta. Tus pensamientos son productos de tu cerebro, no tu totalidad.</p>
+      </div>
+      <blockquote class="pixel-quote" data-reveal>
+        <p>“Yo no soy mis pensamientos. <em>Soy el que los observa.</em>”</p>
+      </blockquote>
+    </div>
+
+    <div class="controls-box" data-reveal>
+      <p class="box-title">CÓMO SE JUEGA</p>
+      <ul>
+        <li><kbd>ARRASTRA</kbd> gira el cerebro</li>
+        <li><kbd>CTRL + RUEDA</kbd> o <kbd>PELLIZCA</kbd> acerca y aleja</li>
+        <li><kbd>CLIC</kbd> en una zona para explorarla</li>
+        <li><kbd>◀ ▶</kbd> cambia de nivel</li>
+        <li><kbd>ESC</kbd> explora libremente</li>
+        <li><kbd>HOLO</kbd> cambia a modo holograma</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-hardware">
+  <div class="wrap">
+    <p class="kick" data-reveal>MUNDO 1 · EL HARDWARE</p>
+    <h2 class="h-neon" data-reveal>¿Qué es <em>el cerebro?</em></h2>
+    <div class="stats" data-reveal>
+      <div><b data-count="1.4" data-dec="1">1,4</b><span>KG DE PESO</span></div>
+      <div><b data-count="86">86</b><span>MIL MILLONES DE NEURONAS</span></div>
+      <div><b data-count="20" data-suffix="%">20%</b><span>DE TU ENERGÍA</span></div>
+      <div><b data-count="2">2</b><span>HEMISFERIOS Y UN PUENTE</span></div>
+    </div>
+    <div class="two-col">
+      <div data-reveal>
+        <h3 class="h-pix">Neuroplasticidad</h3>
+        <p>Cuando nacemos, las redes neuronales son pocas. Con el tiempo, unas se amplían, otras mantienen su tamaño y nacen redes nuevas. Al contrario de lo que se pensaba antes, <b>el cerebro se modifica a cada segundo</b>, a medida que interactúa con lo que lo rodea.</p>
+        <p>Lo que repites se fortalece. Lo que dejas de usar se debilita. <b>No estás terminado.</b></p>
+        <h3 class="h-pix">Dos hemisferios, un puente</h3>
+        <p>El cerebro se divide en hemisferio izquierdo y derecho, unidos por el <b>cuerpo calloso</b>: el puente que permite que la información de un lado la use el otro.</p>
+      </div>
+      <div class="senses" data-reveal>
+        <h3 class="h-pix">Tus cinco mandos</h3>
+        <p>El cerebro usa los cinco sentidos para captar el entorno y convertirlo en sentimientos, acciones, decisiones o pensamientos. Un dicho popular asegura que recordamos:</p>
+        <ul class="sense-bars">
+          <li><span>OLFATO</span><i style="--w:35%"></i><b>35%</b></li>
+          <li><span>GUSTO</span><i style="--w:15%"></i><b>15%</b></li>
+          <li><span>VISTA</span><i style="--w:5%"></i><b>5%</b></li>
+          <li><span>OÍDO</span><i style="--w:2%"></i><b>2%</b></li>
+          <li><span>TACTO</span><i style="--w:1%"></i><b>1%</b></li>
+        </ul>
+        <p class="note">Son cifras populares, no medidas de un estudio: tómalas como metáfora. Lo que sí está comprobado es que el olfato tiene un camino casi directo hacia la amígdala y el hipocampo. Por eso un olor puede devolverte a un recuerdo en un segundo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-players">
+  <div class="wrap">
+    <p class="kick" data-reveal>MUNDO 2 · EL CEREBRO TRIUNO</p>
+    <h2 class="h-neon" data-reveal>Selecciona <em>tu jugador</em></h2>
+    <p class="intro-p" data-reveal>El neurocientífico <b>Paul MacLean</b> propuso que en ti conviven tres cerebros, especializados y conectados entre sí, en el orden en que aparecieron en la evolución. Es una metáfora (al final verás qué dice hoy la ciencia), pero sirve para observarte.</p>
+    <div class="cards">
+      <article class="card" style="--c:#b26bff" data-reveal>
+        <div class="sprite" data-sprite></div>
+        <p class="card-k">P1 · INSTINTO</p>
+        <h3>Cerebro reptiliano</h3>
+        <p>Tronco encefálico y cerebelo. Se desarrolla en el útero. Respira, duerme, despierta, reacciona. Reacciona a lo conocido y actúa rápido para que sobrevivas.</p>
+        <dl class="stat-list">
+          <dt>VELOCIDAD</dt><dd><i style="--v:10"></i></dd>
+          <dt>CONTROL</dt><dd><i style="--v:2"></i></dd>
+          <dt>EDAD</dt><dd class="txt">+500 M AÑOS</dd>
+        </dl>
+        <p class="skill"><b>HABILIDAD:</b> reaccionar antes de pensar.<br><b>DEBILIDAD:</b> no entiende ideas abstractas.</p>
+        <button class="btn small" data-play="reptilian">JUGAR NIVEL ▶</button>
+      </article>
+      <article class="card" style="--c:#ffb347" data-reveal>
+        <div class="sprite" data-sprite></div>
+        <p class="card-k">P2 · EMOCIÓN</p>
+        <h3>Sistema límbico</h3>
+        <p>Amígdala, hipocampo, hipotálamo y tálamo. Se organiza en los primeros seis años con tu experiencia, tu herencia y tu temperamento.</p>
+        <dl class="stat-list">
+          <dt>VELOCIDAD</dt><dd><i style="--v:7"></i></dd>
+          <dt>MEMORIA</dt><dd><i style="--v:9"></i></dd>
+          <dt>EDAD</dt><dd class="txt">+200 M AÑOS</dd>
+        </dl>
+        <p class="skill"><b>HABILIDAD:</b> fijar la memoria emocional.<br><b>DEBILIDAD:</b> confunde alarma con verdad.</p>
+        <button class="btn small" data-play="limbic">JUGAR NIVEL ▶</button>
+      </article>
+      <article class="card" style="--c:#22f2ff" data-reveal>
+        <div class="sprite" data-sprite></div>
+        <p class="card-k">P3 · RAZÓN</p>
+        <h3>Neocórtex</h3>
+        <p>La capa exterior y plegada: el 90 % de la corteza cerebral. Lenguaje, lógica, aprendizaje, planificación y el freno de las acciones inadecuadas.</p>
+        <dl class="stat-list">
+          <dt>VELOCIDAD</dt><dd><i style="--v:3"></i></dd>
+          <dt>LÓGICA</dt><dd><i style="--v:10"></i></dd>
+          <dt>EDAD</dt><dd class="txt">≈100.000 AÑOS</dd>
+        </dl>
+        <p class="skill"><b>HABILIDAD:</b> observarse a sí mismo.<br><b>DEBILIDAD:</b> llega tarde y justifica.</p>
+        <button class="btn small" data-play="cortex">JUGAR NIVEL ▶</button>
+      </article>
+    </div>
+    <blockquote class="wide-quote" data-reveal>
+      <p>“El cerebro límbico y el reptiliano son responsables del <em>85 %</em> de nuestras decisiones de compra, que son inconscientes. El córtex, solamente del <em>15 %</em>.”</p>
+      <cite>Cifra popular del neuromarketing. Nadie la ha medido con exactitud, pero la idea de fondo se sostiene.</cite>
+    </blockquote>
+  </div>
+</section>
+
+<section class="sec sec-shadow">
+  <div class="wrap">
+    <p class="kick" data-reveal>MUNDO 3 · JEFE FINAL</p>
+    <h2 class="h-neon" data-reveal>La <em>sombra</em></h2>
+    <div class="two-col">
+      <div data-reveal>
+        <p class="big">Desde la mirada de <b>Carl Jung</b>, la Sombra guarda los impulsos que rechazamos. Biológicamente, muchos nacen en el <b>tronco encefálico</b> y el <b>sistema límbico</b>.</p>
+        <div class="boss-box">
+          <p class="box-title">⚡ EL CIRCUITO DE RECOMPENSA</p>
+          <p>Cuando sientes estrés o cansancio, tu cerebro busca un pico rápido de <b>dopamina</b>. Las pantallas, el azúcar o una compra impulsiva son atajos rápidos para conseguirlo.</p>
+        </div>
+        <div class="boss-box">
+          <p class="box-title">⚔ LA LUCHA INTERNA</p>
+          <p>Al pelear contra el impulso activas la respuesta de estrés de la amígdala. Irónicamente, eso te agota más y debilita tu voluntad.</p>
+        </div>
+      </div>
+      <div data-reveal>
+        <blockquote class="pixel-quote amber">
+          <p>“Siento este impulso porque mi cuerpo busca alivio, <em>no porque yo sea débil.</em>”</p>
+        </blockquote>
+        <div class="tower">
+          <p class="box-title">🗼 LA TORRE DE CONTROL</p>
+          <p>Aquí entra tu neocórtex. Su función no es solo prohibir, sino <b>observar y narrar</b>.</p>
+          <p class="swap"><s>“Tengo ganas de…”</s><br>“Observo que mi sistema límbico está enviando una señal de búsqueda de dopamina.”</p>
+          <p class="note">Esto separa tu identidad del proceso biológico: se llama desidentificación.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-power">
+  <div class="wrap">
+    <p class="kick" data-reveal>ÍTEMS ESPECIALES</p>
+    <h2 class="h-neon" data-reveal>Power-ups <em>para ensanchar el espacio</em></h2>
+    <blockquote class="wide-quote" data-reveal>
+      <p>“Entre el estímulo y la respuesta hay un espacio. <em>En ese espacio reside nuestra libertad.</em>”</p>
+      <cite>Idea atribuida a Viktor Frankl. El diálogo interno consciente ensancha ese espacio: dejas de ser el soldado que pelea y te conviertes en el científico que observa.</cite>
+    </blockquote>
+    <div class="powerups">
+      <article class="pu" data-reveal>
+        <span class="pu-icon">🏷️</span>
+        <p class="pu-k">POWER-UP 1</p>
+        <h3>Etiquetado afectivo</h3>
+        <p>Ponle nombre a la sensación física y emocional en lugar de luchar contra ella: <em>“Siento presión en el pecho y ansiedad”</em>. Nombrar una emoción se asocia con menos actividad en la amígdala.</p>
+      </article>
+      <article class="pu" data-reveal>
+        <span class="pu-icon">👀</span>
+        <p class="pu-k">POWER-UP 2</p>
+        <h3>El tercer observador</h3>
+        <p>Háblate en tercera persona: <em>“[Tu nombre] está sintiendo un impulso ahora mismo”</em>. La distancia te deja ver el impulso como un evento biológico pasajero, no como una orden.</p>
+      </article>
+      <article class="pu" data-reveal>
+        <span class="pu-icon">🔍</span>
+        <p class="pu-k">POWER-UP 3</p>
+        <h3>Curiosidad, no prohibición</h3>
+        <p>Cambia el <em>“No debo hacer esto”</em> por <em>“¿Qué intenta decirme mi cuerpo con este impulso?”</em>. Activa las redes de búsqueda y aprendizaje del neocórtex y baja la urgencia del instinto.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="sec sec-continue" id="continue">
+  <div class="wrap center">
+    <p class="cont-title">¿CONTINUAR?</p>
+    <p class="cont-num" id="cont-num" aria-live="polite">9</p>
+    <p class="cont-msg" id="cont-msg">Si ni siquiera el mapa con el que intentamos entendernos está terminado, quizá conocerse no sea llegar a una respuesta, sino <b>no dejar de mirar</b>.</p>
+    <button class="btn btn-start" id="replay-top">▶ VOLVER A JUGAR</button>
+  </div>
+</section>
+
+<footer class="credits">
+  <div class="wrap center">
+    <p class="kick">CRÉDITOS</p>
+    <dl>
+      <dt>PROTAGONISTA</dt><dd>Tu cerebro (1,4 kg)</dd>
+      <dt>IDEAS</dt><dd>Paul MacLean · Carl Jung · Viktor Frankl · Antonio Damasio · Matthew Lieberman (UCLA, 2007)</dd>
+      <dt>MÚSICA</dt><dd>Sintetizada en vivo en tu navegador</dd>
+      <dt>MODELO 3D</dt><dd>Generado por código, neurona a neurona</dd>
+    </dl>
+    <p class="fin">GRACIAS POR JUGAR · 2026</p>
+  </div>
+</footer>
+</main>
+
+<script defer src="lib/three.min.js?v=20261120"></script>
+<script defer src="lib/manifest.js?v=20261120"></script>
+<script defer src="js/audio.js?v=20261120"></script>
+<script defer src="js/brain3d.js?v=20261120"></script>
+<script defer src="main.js?v=20261120"></script>
+</body>
+</html>
