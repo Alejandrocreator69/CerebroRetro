@@ -4,7 +4,8 @@ Un videojuego retro, al estilo arcade de los 80, para explorar tu cerebro en 3D:
 
 - Cerebro 3D procedural con modo anatómico y modo holograma.
 - 9 niveles con puntos, logros y récord.
-- Música synthwave y efectos 8-bit generados en vivo en el navegador.
+- Tres estilos de música (Synthwave, Espacial y Chiptune) y efectos 8-bit, generados en vivo en el navegador.
+- Dos fondos a elegir: Arcade y Espacial.
 - Manual del jugador sobre el cerebro triuno, la sombra de Jung y técnicas de autoobservación.
 
 ## Ver en local

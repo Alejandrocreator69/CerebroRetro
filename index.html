@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Mr+Dafoe&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=20261120" />
+<link rel="stylesheet" href="styles.css?v=20261127" />
 <script>document.documentElement.className = "js";</script>
 </head>
 <body>
@@ -31,6 +31,8 @@
 <!-- ============ EL JUEGO ============ -->
 <section id="brain-app" class="game" aria-label="Juego: explora tu cerebro en 3D">
   <div class="sky" aria-hidden="true">
+    <canvas class="space-canvas" id="space-canvas"></canvas>
+    <div class="planet"></div>
     <div class="stars"></div>
     <div class="sun"></div>
     <svg class="mountains" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -51,12 +53,15 @@
   </header>
 
   <div class="tools" role="toolbar" aria-label="Opciones">
-    <button id="t-music" title="Música" aria-pressed="true">♪</button>
+    <button id="t-music" title="Música: elige el estilo" aria-pressed="true" aria-haspopup="true" aria-expanded="false">♪</button>
+    <button id="t-bg" title="Fondo: arcade o espacial" aria-haspopup="true" aria-expanded="false">BG</button>
     <button id="t-sfx" title="Efectos de sonido" aria-pressed="true">SFX</button>
     <button id="t-mode" title="Cambiar a holograma / anatómico" aria-pressed="false">HOLO</button>
     <button id="t-xray" title="Rayos X: ver el interior">RX</button>
     <button id="t-zin" title="Acercar">+</button>
     <button id="t-zout" title="Alejar">−</button>
+    <div class="tool-pop" id="pop-music" role="menu" aria-label="Música"><p>MÚSICA</p></div>
+    <div class="tool-pop" id="pop-bg" role="menu" aria-label="Fondo"><p>FONDO</p></div>
   </div>
 
   <p class="hint" id="hint">ARRASTRA PARA GIRAR · PELLIZCA O CTRL+RUEDA PARA ZOOM · TOCA UNA ZONA</p>
@@ -93,7 +98,7 @@
         <button class="btn btn-start" id="start">▶ PRESIONA START</button>
         <button class="btn ghost" id="free">EXPLORAR LIBRE</button>
       </div>
-      <button class="sound-pick" id="intro-sound" aria-pressed="true">♪ MÚSICA: <b>SÍ</b></button>
+      <button class="sound-pick" id="intro-sound" aria-pressed="true" title="Toca para cambiar el estilo">♪ MÚSICA: <b>SYNTHWAVE</b></button>
       <p class="insert blink-slow">INSERTA CONCIENCIA · 1 CRÉDITO</p>
     </div>
   </div>
@@ -171,7 +176,7 @@
     <h2 class="h-neon" data-reveal>Selecciona <em>tu jugador</em></h2>
     <p class="intro-p" data-reveal>El neurocientífico <b>Paul MacLean</b> propuso que en ti conviven tres cerebros, especializados y conectados entre sí, en el orden en que aparecieron en la evolución. Es una metáfora (al final verás qué dice hoy la ciencia), pero sirve para observarte.</p>
     <div class="cards">
-      <article class="card" style="--c:#b26bff" data-reveal>
+      <article class="card" style="--c:#a58ad9" data-reveal>
         <div class="sprite" data-sprite></div>
         <p class="card-k">P1 · INSTINTO</p>
         <h3>Cerebro reptiliano</h3>
@@ -184,7 +189,7 @@
         <p class="skill"><b>HABILIDAD:</b> reaccionar antes de pensar.<br><b>DEBILIDAD:</b> no entiende ideas abstractas.</p>
         <button class="btn small" data-play="reptilian">JUGAR NIVEL ▶</button>
       </article>
-      <article class="card" style="--c:#ffb347" data-reveal>
+      <article class="card" style="--c:#e6b26e" data-reveal>
         <div class="sprite" data-sprite></div>
         <p class="card-k">P2 · EMOCIÓN</p>
         <h3>Sistema límbico</h3>
@@ -197,7 +202,7 @@
         <p class="skill"><b>HABILIDAD:</b> fijar la memoria emocional.<br><b>DEBILIDAD:</b> confunde alarma con verdad.</p>
         <button class="btn small" data-play="limbic">JUGAR NIVEL ▶</button>
       </article>
-      <article class="card" style="--c:#22f2ff" data-reveal>
+      <article class="card" style="--c:#66cfd8" data-reveal>
         <div class="sprite" data-sprite></div>
         <p class="card-k">P3 · RAZÓN</p>
         <h3>Neocórtex</h3>
@@ -303,10 +308,10 @@
 </footer>
 </main>
 
-<script defer src="lib/three.min.js?v=20261120"></script>
-<script defer src="lib/manifest.js?v=20261120"></script>
-<script defer src="js/audio.js?v=20261120"></script>
-<script defer src="js/brain3d.js?v=20261120"></script>
-<script defer src="main.js?v=20261120"></script>
+<script defer src="lib/three.min.js?v=20261127"></script>
+<script defer src="lib/manifest.js?v=20261127"></script>
+<script defer src="js/audio.js?v=20261127"></script>
+<script defer src="js/brain3d.js?v=20261127"></script>
+<script defer src="main.js?v=20261127"></script>
 </body>
 </html>

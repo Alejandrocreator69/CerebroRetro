@@ -7,12 +7,14 @@
 
   var ctx = null, master, musicBus, sfxBus, delayIn, noiseBuf;
   var playing = false, timer = null, nextTime = 0, step = 0;
-  var BPM = 100, SPS = 60 / BPM / 4;            // segundos por semicorchea
-  var LOOP_STEPS = 32 * 16;                      // 32 compases
+  var SPS = 60 / 100 / 4;                        // segundos por semicorchea (cambia con el estilo)
+  var dl = null;                                 // delay del eco (su tiempo depende del estilo)
 
   function load(k, d) { try { var v = localStorage.getItem("brain." + k); return v === null ? d : v === "1"; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem("brain." + k, v ? "1" : "0"); } catch (e) {} }
   var musicOn = load("music", true), sfxOn = load("sfx", true);
+  var style = "synthwave";
+  try { style = localStorage.getItem("brain.style") || "synthwave"; } catch (e) {}
 
   function mtof(n) { return 440 * Math.pow(2, (n - 69) / 12); }
 
@@ -31,7 +33,7 @@
 
     // Eco (delay con realimentación) para el arpegio y la melodía
     delayIn = ctx.createGain(); delayIn.gain.value = 1;
-    var dl = ctx.createDelay(1.5); dl.delayTime.value = SPS * 3;
+    dl = ctx.createDelay(1.5); dl.delayTime.value = SPS * 3;
     var fb = ctx.createGain(); fb.gain.value = 0.34;
     var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2200;
     var wet = ctx.createGain(); wet.gain.value = 0.45;
@@ -105,11 +107,11 @@
     s.start(t); s.stop(t + dur + 0.05);
   }
 
-  function kick(t) {
+  function kick(t, gain) {
     var g = ctx.createGain(); g.connect(musicBus);
     var o = ctx.createOscillator(); o.type = "sine";
     o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
-    g.gain.setValueAtTime(0.85, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    g.gain.setValueAtTime(gain || 0.85, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
     o.connect(g); o.start(t); o.stop(t + 0.4);
   }
   function snare(t) {
@@ -158,12 +160,84 @@
     }
   }
 
+  /* Nota genérica: onda, nota MIDI, duración, volumen, ataque, cola, filtro y envío al eco */
+  function tone(t, type, n, dur, peak, a, rel, cutoff, toDelay) {
+    var g = ctx.createGain(), dest = g;
+    if (cutoff) { var f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = cutoff; f.connect(g); dest = f; }
+    g.connect(musicBus); if (toDelay) g.connect(delayIn);
+    var end = env(g, t, a, peak, 0.08, 0.7, rel, dur);
+    osc(type, mtof(n), t, end, dest);
+  }
+
+  /* ---------- Estilo 2: Espacial (ambiente, 76 BPM) ---------- */
+  var SP_ROOTS = [50, 46, 53, 48];                                  // Dm · Bb · F · C
+  var SP_CH = [[62, 65, 69, 72], [58, 62, 65, 69], [60, 65, 69, 72], [60, 64, 67, 74]];
+  var SP_PAT = [0, 2, 1, 3, 2, 0, 3, 1];
+  function scheduleSpace(st, t) {
+    var bar = Math.floor(st / 16), s = st % 16, ch = Math.floor(bar / 2) % 4, c = SP_CH[ch];
+    if (s === 0 && bar % 2 === 0) {
+      tone(t, "sawtooth", SP_ROOTS[ch] - 12, 30 * SPS, 0.06, 2.5, 3, 480);
+      tone(t, "sine", SP_ROOTS[ch], 30 * SPS, 0.07, 2, 3, 0);
+      c.forEach(function (n) { tone(t + 0.05, "triangle", n, 28 * SPS, 0.02, 3, 3, 1400); });
+    }
+    if (s % 2 === 0) tone(t, "triangle", c[SP_PAT[(s / 2) % 8]] + (bar % 2 ? 12 : 0), SPS, 0.035, 0.005, 0.5, 2600, true);
+    if (s === 0 || s === 8) kick(t, 0.35);
+    if ((st * 37) % 29 === 3) tone(t, "sine", c[st % 4] + 24, SPS * 0.5, 0.025, 0.003, 1.4, 0, true);
+  }
+
+  /* ---------- Estilo 3: Chiptune (8 bits, 150 BPM) ---------- */
+  var CH_MEL = [69, 0, 72, 0, 76, 0, 74, 72, 69, 0, 67, 0, 69, 0, 0, 0,
+                65, 0, 69, 0, 72, 0, 74, 0, 72, 0, 69, 0, 67, 0, 65, 0,
+                64, 0, 67, 0, 72, 0, 76, 0, 79, 0, 76, 0, 74, 0, 72, 0,
+                71, 0, 74, 0, 79, 0, 77, 76, 74, 0, 71, 0, 67, 0, 0, 0];
+  var CH_BASS = [45, 41, 48, 43];
+  var CH_CHORD = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
+  function scheduleChip(st, t) {
+    var pos = st % 64, bar = Math.floor(pos / 16), s = pos % 16, intro = st < 64;
+    if (!intro && CH_MEL[pos]) tone(t, "square", CH_MEL[pos], SPS * 1.5, 0.05, 0.004, 0.05, 3000, true);
+    tone(t, "square", CH_CHORD[bar][s % 3] + 12, SPS * 0.5, intro ? 0.03 : 0.014, 0.002, 0.03, 2200);
+    if (s % 2 === 0) tone(t, "triangle", CH_BASS[bar] - 12 + ((s / 2) % 2 ? 12 : 0), SPS * 1.6, 0.22, 0.004, 0.04, 0);
+    if (s % 4 === 0) kick(t, 0.6);
+    if (s === 4 || s === 12) noise(t, 0.1, "bandpass", 2200, 0.2);
+    if (s % 2 === 1) noise(t, 0.03, "highpass", 8000, 0.045);
+  }
+
+  var STYLES = {
+    synthwave: { name: "SYNTHWAVE", bpm: 100, loop: 32 * 16, fn: schedule },
+    space:     { name: "ESPACIAL",  bpm: 76,  loop: 8 * 16,  fn: scheduleSpace },
+    chiptune:  { name: "CHIPTUNE",  bpm: 150, loop: 8 * 16,  fn: scheduleChip }
+  };
+  if (!STYLES[style]) style = "synthwave";
+  SPS = 60 / STYLES[style].bpm / 4;
+
   function tick() {
     if (!ctx || !playing) return;
     if (nextTime < ctx.currentTime - 0.2) nextTime = ctx.currentTime + 0.05;  // pestaña dormida: no "ráfagas"
+    var S = STYLES[style];
     while (nextTime < ctx.currentTime + 0.15) {
-      schedule(step, nextTime);
-      nextTime += SPS; step = (step + 1) % LOOP_STEPS;
+      S.fn(step, nextTime);
+      nextTime += SPS; step = (step + 1) % S.loop;
+    }
+  }
+
+  var switching = null;
+  function setStyle(id) {
+    if (!STYLES[id]) return;
+    try { localStorage.setItem("brain.style", id); } catch (e) {}
+    var apply = function () {
+      style = id; SPS = 60 / STYLES[id].bpm / 4; step = 0;
+      if (dl) dl.delayTime.setValueAtTime(SPS * 3, ctx.currentTime);
+      if (ctx) nextTime = ctx.currentTime + 0.05;
+    };
+    if (!musicOn) { musicOn = true; save("music", true); }
+    if (!ensure()) { style = id; SPS = 60 / STYLES[id].bpm / 4; return; }
+    clearTimeout(switching);
+    if (playing && id !== style) {
+      fadeMusic(0, 0.4);
+      switching = setTimeout(function () { apply(); fadeMusic(0.55, 1.2); }, 450);
+    } else {
+      if (!playing) apply();
+      startMusic();
     }
   }
 
@@ -225,6 +299,10 @@
       return sfxOn;
     },
     isMusicOn: function () { return musicOn; },
+    setStyle: setStyle,
+    getStyle: function () { return style; },
+    styles: function () { return Object.keys(STYLES).map(function (k) { return { id: k, name: STYLES[k].name }; }); },
+    setMusicOff: function () { if (musicOn) { musicOn = false; save("music", false); stopMusic(); } },
     isSfxOn: function () { return sfxOn; },
     sfx: function (name) {
       if (!sfxOn || !SFX[name] || !ensure()) return;

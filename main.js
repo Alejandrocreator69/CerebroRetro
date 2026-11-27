@@ -225,19 +225,133 @@
     });
   }
 
+  /* ---------- Fondo: arcade o espacial ---------- */
+  var closeToolMenus = function () { return false; };
+  var space = { cv: null, x: null, stars: [], raf: 0, w: 0, h: 0, shoot: null, nextShoot: 3 };
+  function setBackground(id) {
+    if (id !== "space") id = "arcade";
+    app.dataset.bg = id;
+    try { localStorage.setItem("brain.bg", id); } catch (e) {}
+    var meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = id === "space" ? "#070518" : "#0b0221";
+    if (id === "space") startSpace(); else stopSpace();
+  }
+  function sizeSpace() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    space.w = space.cv.clientWidth; space.h = space.cv.clientHeight;
+    space.cv.width = Math.round(space.w * dpr); space.cv.height = Math.round(space.h * dpr);
+    space.x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var n = Math.min(600, Math.round(space.w * space.h / 2600)), seed = 11;
+    var rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    var tints = ["#ffffff", "#dfe4ff", "#cfd8ff", "#f2e4d8", "#e8d6f0"];
+    space.stars = [];
+    for (var i = 0; i < n; i++) space.stars.push({ x: rnd(), y: rnd(), d: 0.2 + rnd() * 0.8, r: rnd() < 0.07 ? 1.8 + rnd() : 0.6 + rnd() * 0.9,
+      a: 0.35 + rnd() * 0.6, sp: 0.6 + rnd() * 2, ph: rnd() * 6.3, c: tints[Math.floor(rnd() * tints.length)] });
+  }
+  function drawSpace(now) {
+    var t = reduceMotion ? 0 : now / 1000, x = space.x, w = space.w, h = space.h;
+    x.clearRect(0, 0, w, h);
+    for (var i = 0; i < space.stars.length; i++) {
+      var s = space.stars[i];
+      var px = (((s.x - t * 0.004 * s.d) % 1) + 1) % 1 * w, py = s.y * h;       // deriva lenta en paralaje
+      x.globalAlpha = s.a * (0.6 + 0.4 * Math.sin(t * s.sp + s.ph));
+      x.fillStyle = s.c;
+      if (s.r > 1.7) { x.beginPath(); x.arc(px, py, s.r * 0.6, 0, 6.283); x.fill(); }
+      else x.fillRect(px, py, s.r, s.r);
+    }
+    x.globalAlpha = 1;
+    if (!reduceMotion) {
+      if (!space.shoot && t > space.nextShoot) {
+        space.shoot = { x: w * (0.1 + Math.random() * 0.6), y: h * (0.05 + Math.random() * 0.35), t0: t, ang: 0.4 + Math.random() * 0.35, len: 110 + Math.random() * 120 };
+        space.nextShoot = t + 5 + Math.random() * 8;
+      }
+      if (space.shoot) {
+        var sh = space.shoot, u = (t - sh.t0) / 0.9;
+        if (u >= 1) space.shoot = null;
+        else {
+          var d = u * w * 0.35, hx = sh.x + Math.cos(sh.ang) * d, hy = sh.y + Math.sin(sh.ang) * d;
+          var tx = hx - Math.cos(sh.ang) * sh.len, ty = hy - Math.sin(sh.ang) * sh.len;
+          var g = x.createLinearGradient(hx, hy, tx, ty);
+          g.addColorStop(0, "rgba(236,240,255," + (0.85 * (1 - u)) + ")"); g.addColorStop(1, "rgba(236,240,255,0)");
+          x.strokeStyle = g; x.lineWidth = 1.5; x.beginPath(); x.moveTo(hx, hy); x.lineTo(tx, ty); x.stroke();
+        }
+      }
+    }
+    space.raf = requestAnimationFrame(drawSpace);
+  }
+  function startSpace() {
+    if (!space.cv) {
+      space.cv = $("#space-canvas"); if (!space.cv) return;
+      space.x = space.cv.getContext("2d");
+      window.addEventListener("resize", function () { if (space.raf) sizeSpace(); });
+    }
+    if (space.raf) return;
+    sizeSpace();
+    space.raf = requestAnimationFrame(drawSpace);
+  }
+  function stopSpace() { if (space.raf) cancelAnimationFrame(space.raf); space.raf = 0; }
+
   /* ---------- Herramientas ---------- */
   function bindTools() {
     var mBtn = $("#t-music"), sBtn = $("#t-sfx"), modeBtn = $("#t-mode"), xBtn = $("#t-xray");
+    var styles = AUDIO.styles ? AUDIO.styles() : [];
+    var curMusic = function () { return AUDIO.isMusicOn() ? (AUDIO.getStyle ? AUDIO.getStyle() : "synthwave") : "off"; };
     var sync = function () {
       mBtn.setAttribute("aria-pressed", AUDIO.isMusicOn() ? "true" : "false");
       sBtn.setAttribute("aria-pressed", AUDIO.isSfxOn() ? "true" : "false");
-      var ip = $("#intro-sound");
-      if (ip) { ip.setAttribute("aria-pressed", AUDIO.isMusicOn() ? "true" : "false"); ip.querySelector("b").textContent = AUDIO.isMusicOn() ? "SÍ" : "NO"; }
+      var ip = $("#intro-sound"), cur = curMusic(), st = styles.filter(function (x) { return x.id === cur; })[0];
+      if (ip) { ip.setAttribute("aria-pressed", AUDIO.isMusicOn() ? "true" : "false"); ip.querySelector("b").textContent = st ? st.name : (AUDIO.isMusicOn() ? "SÍ" : "NO"); }
+      [].forEach.call(app.querySelectorAll("#pop-music button"), function (b) { b.setAttribute("aria-checked", b.dataset.id === cur ? "true" : "false"); });
+      [].forEach.call(app.querySelectorAll("#pop-bg button"), function (b) { b.setAttribute("aria-checked", b.dataset.id === app.dataset.bg ? "true" : "false"); });
     };
+
+    /* Menús desplegables (música y fondo) */
+    var MUSIC_INFO = { off: ["–", "APAGADA", "Silencio total"], synthwave: ["♪", "SYNTHWAVE", "La banda sonora original"],
+      space: ["✦", "ESPACIAL", "Ambiente lento y profundo"], chiptune: ["▣", "CHIPTUNE", "8 bits, rápida y alegre"] };
+    var BG_INFO = { arcade: ["▦", "ARCADE", "Sol de neón y rejilla"], space: ["☾", "ESPACIAL", "Estrellas, nebulosas y un planeta"] };
+    var optHTML = function (id, info) { return '<button role="menuitemradio" aria-checked="false" data-id="' + id + '"><i>' + info[0] + '</i><span>' + info[1] + '<small>' + info[2] + '</small></span></button>'; };
+    $("#pop-music").insertAdjacentHTML("beforeend", ["off"].concat(styles.map(function (x) { return x.id; })).map(function (id) { return optHTML(id, MUSIC_INFO[id] || ["♪", id.toUpperCase(), ""]); }).join(""));
+    $("#pop-bg").insertAdjacentHTML("beforeend", Object.keys(BG_INFO).map(function (id) { return optHTML(id, BG_INFO[id]); }).join(""));
+    var pops = { "t-music": $("#pop-music"), "t-bg": $("#pop-bg") };
+    var closePops = function () {
+      var any = false;
+      Object.keys(pops).forEach(function (k) { if (pops[k].classList.contains("open")) any = true; pops[k].classList.remove("open"); $("#" + k).setAttribute("aria-expanded", "false"); });
+      return any;
+    };
+    closeToolMenus = closePops;
+    Object.keys(pops).forEach(function (k) {
+      $("#" + k).addEventListener("click", function () {
+        var open = !pops[k].classList.contains("open");
+        closePops();
+        if (open) { pops[k].classList.add("open"); $("#" + k).setAttribute("aria-expanded", "true"); }
+        AUDIO.sfx("blip");
+      });
+    });
+    document.addEventListener("pointerdown", function (e) { if (!e.target.closest(".tools")) closePops(); });
+
+    $("#pop-music").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      AUDIO.unlock();
+      if (b.dataset.id === "off") { if (AUDIO.setMusicOff) AUDIO.setMusicOff(); else if (AUDIO.isMusicOn()) AUDIO.toggleMusic(); }
+      else if (AUDIO.setStyle) AUDIO.setStyle(b.dataset.id);
+      sync(); AUDIO.sfx("select");
+    });
+    $("#pop-bg").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      setBackground(b.dataset.id); sync(); AUDIO.sfx("select");
+    });
+
+    var savedBg = "arcade"; try { savedBg = localStorage.getItem("brain.bg") || "arcade"; } catch (e) {}
+    setBackground(savedBg);
     sync();
-    mBtn.addEventListener("click", function () { AUDIO.toggleMusic(); sync(); AUDIO.sfx("blip"); });
     sBtn.addEventListener("click", function () { AUDIO.toggleSfx(); sync(); AUDIO.sfx("blip"); });
-    $("#intro-sound").addEventListener("click", function () { AUDIO.unlock(); AUDIO.toggleMusic(); sync(); AUDIO.sfx("blip"); });
+    // En la portada, el botón recorre: apagada → synthwave → espacial → chiptune
+    $("#intro-sound").addEventListener("click", function () {
+      AUDIO.unlock();
+      var order = ["off"].concat(styles.map(function (x) { return x.id; })), next = order[(order.indexOf(curMusic()) + 1) % order.length];
+      if (next === "off") { if (AUDIO.setMusicOff) AUDIO.setMusicOff(); else AUDIO.toggleMusic(); }
+      else if (AUDIO.setStyle) AUDIO.setStyle(next); else AUDIO.toggleMusic();
+      sync(); AUDIO.sfx("blip");
+    });
 
     modeBtn.addEventListener("click", function () {
       var holo = api.getMode() < 0.5;
@@ -351,7 +465,7 @@
           '<div class="fact" style="--c:' + COLORS.limbic + '"><b>CIRCUITO DE RECOMPENSA</b>Con estrés o cansancio, tu cerebro busca un pico rápido de dopamina: las pantallas, el azúcar, una compra. Cualquier atajo.</div>' +
           "<p><b>Llega un impulso.</b> ¿Qué haces?</p>" +
           '<div class="gauges">' +
-          '<div class="gauge" style="--c:' + "#ff4d6d" + '">ESTRÉS · AMÍGDALA<div><i id="g-stress"></i></div></div>' +
+          '<div class="gauge" style="--c:' + "#e0707f" + '">ESTRÉS · AMÍGDALA<div><i id="g-stress"></i></div></div>' +
           '<div class="gauge" style="--c:' + COLORS.cortex + '">VOLUNTAD<div><i id="g-will"></i></div></div>' +
           "</div>" +
           '<div class="row"><button class="btn danger" id="sh-fight">⚔ PELEAR</button><button class="btn" id="sh-observe">◉ OBSERVAR</button></div>' +
@@ -574,6 +688,7 @@
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       var r = app.getBoundingClientRect();
       if (r.bottom < window.innerHeight * 0.5 || r.top > window.innerHeight * 0.5) return;   // solo si el juego está en pantalla
+      if (e.key === "Escape" && closeToolMenus()) return;
       if (e.key === "Escape" && stepIndex >= 0) closePanel();
       if (stepIndex >= 0 && e.key === "ArrowRight") { AUDIO.sfx("select"); goTo(Math.min(STEPS.length - 1, stepIndex + 1)); }
       if (stepIndex >= 0 && e.key === "ArrowLeft") { AUDIO.sfx("back"); goTo(Math.max(0, stepIndex - 1)); }

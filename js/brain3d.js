@@ -91,7 +91,7 @@
     "  float spec = pow(max(dot(N,H),0.0),48.0)*0.32*ao;",
     "  vec3 col = base*(0.16 + d1*vec3(1.0,0.95,0.93) + d2*0.38*vec3(0.55,0.35,1.0));",
     "  col += spec;",
-    "  col += fres*(vec3(1.0,0.17,0.68)*0.55 + uRegion*0.25);",                    // contraluz synthwave
+    "  col += fres*(vec3(0.85,0.40,0.66)*0.42 + uRegion*0.25);",                    // contraluz synthwave
     "  col += uRegion*uGlow*(0.45+0.8*fres);",
     "  col += uRegion*uHover*0.22;",
     /* --- holograma --- */
@@ -180,7 +180,7 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.12;
+    renderer.toneMappingExposure = 1.04;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     var scene = new THREE.Scene();
@@ -344,7 +344,7 @@
         arr[i * 3] = r * Math.sin(ph) * Math.cos(th); arr[i * 3 + 1] = r * Math.cos(ph) * 0.7; arr[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
       }
       var g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
-      return new THREE.Points(g, new THREE.PointsMaterial({ color: 0xff7ad9, size: 0.03, transparent: true, opacity: 0.6, depthWrite: false }));
+      return new THREE.Points(g, new THREE.PointsMaterial({ color: 0xd894c6, size: 0.03, transparent: true, opacity: 0.6, depthWrite: false }));
     }
 
     var glowTex = (function () {
